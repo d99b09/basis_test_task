@@ -43,5 +43,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  outbox_publisher:
+    container_name: basis-test-task-outbox-publisher
+    build:
+      context: .
+    command: ["python", "-m", "app.workers.outbox_publisher"]
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy

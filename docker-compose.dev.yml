@@ -5,3 +5,10 @@ services:
       WATCHFILES_FORCE_POLLING: "true"
     volumes:
       - ./app:/app/app
+
+  outbox_publisher:
+    command: ["watchfiles", "--filter", "python", "python -m app.workers.outbox_publisher", "/app/app"]
+    environment:
+      WATCHFILES_FORCE_POLLING: "true"
+    volumes:
+      - ./app:/app/app

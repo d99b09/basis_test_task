@@ -12,7 +12,9 @@ from app.exceptions.payment import (
     PaymentStorageError,
 )
 from app.models.payment import Payment
+from app.repos.outbox import OutboxRepository
 from app.repos.payment import PaymentRepository
+from app.shemas.events import PaymentCreatedEvent
 from app.shemas.payment import PaymentCreate
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,7 @@ class PaymentService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.repository = PaymentRepository(session)
+        self.outbox_repository = OutboxRepository(session)
 
     async def create_payment(
         self, data: PaymentCreate, idempotency_key: str
@@ -30,6 +33,8 @@ class PaymentService:
             async with self.session.begin():
                 payment = await self.repository.create(data, idempotency_key)
                 if payment is not None:
+                    event = PaymentCreatedEvent(payment_id=payment.id)
+                    await self.outbox_repository.created(event.model_dump(mode="json"))
                     return payment
                 payment = await self.repository.get_by_idempotency_key(idempotency_key)
                 if payment is None:
