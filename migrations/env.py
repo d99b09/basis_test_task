@@ -1,4 +1,5 @@
 import asyncio
+import alembic_postgresql_enum
 
 from alembic import context
 from sqlalchemy import Connection
