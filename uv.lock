@@ -43,6 +43,19 @@ wheels = [
 ]
 
 [[package]]
+name = "alembic-postgresql-enum"
+version = "1.11.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "alembic" },
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c8/b9/3545518b0c50b514570ba079db53468483a4bd4ca852db8f93ef8c425aa7/alembic_postgresql_enum-1.11.0.tar.gz", hash = "sha256:e23d6fbff376fa33f2ac62089b4d14ee7cb99ca6bf327e28b3c0947af002159c", size = 19571, upload-time = "2026-10-15T19:13:33.353Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/57/9f/25ce821ffce88f85943b85c5c11a9117558baaceb286007815c6949b3ac4/alembic_postgresql_enum-1.11.0-py3-none-any.whl", hash = "sha256:6eff63ab05b1695b27680d16fd8d1a926706a297e80389f0c19da4fb0bef6c9f", size = 29862, upload-time = "2026-10-15T19:13:31.946Z" },
+]
+
+[[package]]
 name = "annotated-doc"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -132,6 +145,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "alembic-postgresql-enum" },
     { name = "asyncpg" },
     { name = "fastapi" },
     { name = "faststream", extra = ["rabbit"] },
@@ -150,6 +164,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.20.0" },
+    { name = "alembic-postgresql-enum", specifier = ">=1.11.0" },
     { name = "asyncpg", specifier = ">=0.32.0" },
     { name = "fastapi", specifier = ">=0.143.2" },
     { name = "faststream", extras = ["rabbit"], specifier = ">=0.7.7" },
