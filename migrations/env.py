@@ -1,6 +1,6 @@
 import asyncio
-import alembic_postgresql_enum
 
+import alembic_postgresql_enum  # noqa: F401
 from alembic import context
 from sqlalchemy import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
