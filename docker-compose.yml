@@ -57,3 +57,17 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+
+  consumer:
+    container_name: basis-test-task-consumer
+    build:
+      context: .
+    command: ["python", "-m", "app.workers.consumer"]
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy

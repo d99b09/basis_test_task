@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -32,6 +33,18 @@ class PaymentRepository:
 
     async def get_by_id(self, payment_id: UUID) -> Payment | None:
         return await self.session.get(Payment, payment_id)
+
+    async def get_by_id_for_update(self, payment_id: UUID) -> Payment | None:
+        statement = select(Payment).where(Payment.id == payment_id).with_for_update()
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def update_status(
+        self, payment: Payment, status: PaymentStatus, processed_at: datetime
+    ) -> None:
+        payment.status = status
+        payment.processed_at = processed_at
+        await self.session.flush()
 
     async def get_by_idempotency_key(self, key: str) -> Payment | None:
         return await self.session.scalar(

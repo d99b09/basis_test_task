@@ -12,3 +12,10 @@ services:
       WATCHFILES_FORCE_POLLING: "true"
     volumes:
       - ./app:/app/app
+
+  consumer:
+    command: ["watchfiles", "--filter", "python", "python -m app.workers.consumer", "/app/app"]
+    environment:
+      WATCHFILES_FORCE_POLLING: "true"
+    volumes:
+      - ./app:/app/app
