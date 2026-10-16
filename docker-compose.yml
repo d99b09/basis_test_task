@@ -32,6 +32,18 @@ services:
       retries: 10
       start_period: 15s
 
+  migrations:
+    build:
+      context: .
+    command: ["alembic", "upgrade", "head"]
+    env_file:
+      - .env
+    volumes:
+      - ./migrations:/app/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     container_name: basis-test-task-api
     build:
@@ -43,6 +55,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
 
   outbox_publisher:
     container_name: basis-test-task-outbox-publisher
@@ -55,6 +69,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
 
@@ -69,5 +85,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
