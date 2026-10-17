@@ -19,8 +19,6 @@ docs/
 docker-compose*.yml
 .gitignore
 
-.agents/
-.codex/
 .aws/
 .idea/
 .vscode/
