@@ -2,7 +2,7 @@ import logging
 from uuid import UUID
 
 from asyncpg import PostgresError
-from pydantic import HttpUrl
+from pydantic import HttpUrl, JsonValue
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +18,23 @@ from app.shemas.events import PaymentCreatedEvent
 from app.shemas.payment import PaymentCreate
 
 logger = logging.getLogger(__name__)
+
+
+def _json_equal(left: JsonValue, right: JsonValue) -> bool:
+    """Compare JSON types and values; int and float share the JSON number type."""
+    if type(left) is not type(right):
+        if type(left) in (int, float) and type(right) in (int, float):
+            return left == right
+        return False
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(
+            _json_equal(value, right[key]) for key, value in left.items()
+        )
+    if isinstance(left, list):
+        return len(left) == len(right) and all(
+            _json_equal(a, b) for a, b in zip(left, right)
+        )
+    return left == right
 
 
 class PaymentService:
@@ -43,7 +60,7 @@ class PaymentService:
                     payment.amount != data.amount
                     or payment.currency != data.currency
                     or payment.description != data.description
-                    or payment.metadata_ != data.metadata
+                    or not _json_equal(payment.metadata_, data.metadata)
                     or str(HttpUrl(payment.webhook_url)) != str(data.webhook_url)
                 ):
                     raise IdempotencyConflictError(
