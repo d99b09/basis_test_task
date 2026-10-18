@@ -1,0 +1,7 @@
+services:
+  webhook-receiver:
+    container_name: basis-test-task-webhook-receiver
+    build:
+      context: ./tools/webhook_receiver
+    ports:
+      - "127.0.0.1:8080:8080"
