@@ -1,8 +1,10 @@
 from secrets import compare_digest
 from typing import Annotated
 
-from fastapi import HTTPException, Security, status
+from fastapi import HTTPException, Request, Security, status
+from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.core.config import CONFIG
 
@@ -25,3 +27,23 @@ async def verify_api_key(
             detail="Неверный или отсутствующий API-ключ.",
             headers={"WWW-Authenticate": "APIKey"},
         )
+
+
+class APIKeyMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            request = Request(scope)
+            try:
+                await verify_api_key(request.headers.get(api_key_header.model.name))
+            except HTTPException as exc:
+                response = JSONResponse(
+                    status_code=exc.status_code,
+                    content={"detail": exc.detail},
+                    headers=exc.headers,
+                )
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
