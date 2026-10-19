@@ -16,8 +16,8 @@ from app.infrastructure.rabbitmq import broker, payments_queue, setup_rabbitmq
 from app.models.enums import PaymentStatus
 from app.models.payment import Payment
 from app.repos.payment import PaymentRepository
+from app.schemas.events import PaymentCreatedEvent
 from app.services.processor import PaymentProcessor
-from app.shemas.events import PaymentCreatedEvent
 
 logger = logging.getLogger(__name__)
 PROCESSING_ATTEMPTS = 3

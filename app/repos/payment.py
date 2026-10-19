@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import PaymentStatus
 from app.models.payment import Payment
-from app.shemas.payment import PaymentCreate
+from app.schemas.payment import PaymentCreate
 
 
 class PaymentRepository:

@@ -14,8 +14,8 @@ from app.exceptions.payment import (
 from app.models.payment import Payment
 from app.repos.outbox import OutboxRepository
 from app.repos.payment import PaymentRepository
-from app.shemas.events import PaymentCreatedEvent
-from app.shemas.payment import PaymentCreate
+from app.schemas.events import PaymentCreatedEvent
+from app.schemas.payment import PaymentCreate
 
 logger = logging.getLogger(__name__)
 

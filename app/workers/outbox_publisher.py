@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from app.core.db_config import SessionFactory, engine
 from app.infrastructure.rabbitmq import broker, publish_payment, setup_rabbitmq
 from app.repos.outbox import OutboxRepository
-from app.shemas.events import PaymentCreatedEvent
+from app.schemas.events import PaymentCreatedEvent
 
 logger = logging.getLogger(__name__)
 

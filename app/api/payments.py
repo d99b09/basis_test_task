@@ -10,8 +10,8 @@ from app.exceptions.payment import (
     PaymentNotFoundError,
     PaymentStorageError,
 )
+from app.schemas.payment import PaymentCreate, PaymentCreated, PaymentResponse
 from app.services.payment import PaymentService
-from app.shemas.payment import PaymentCreate, PaymentCreated, PaymentResponse
 
 router = APIRouter(
     prefix="/v1/payments",
