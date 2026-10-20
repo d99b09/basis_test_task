@@ -19,7 +19,7 @@ class OutboxRepository:
     async def get_unpublished(self, limit: int = 100) -> list[OutboxEvent]:
         statement = (
             select(OutboxEvent)
-            .where(OutboxEvent.published_at.is_(None))
+            .where(OutboxEvent.published_at.is_(None), OutboxEvent.error.is_(None))
             .order_by(OutboxEvent.created_at, OutboxEvent.id)
             .limit(limit)
             .with_for_update(skip_locked=True)
