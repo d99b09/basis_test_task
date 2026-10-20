@@ -60,7 +60,7 @@ def pytest_addoption(parser):
     )
     group.addoption(
         "--stack-api-url",
-        default="http://localhost:8000",
+        default=f"http://localhost:{os.getenv('API_HOST_PORT', '8000')}",
         help="URL of the running API used by live-stack tests",
     )
 

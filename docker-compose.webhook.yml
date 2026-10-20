@@ -5,4 +5,4 @@ services:
     build:
       context: ./tools/webhook_receiver
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${WEBHOOK_HOST_PORT:-8080}:8080"
