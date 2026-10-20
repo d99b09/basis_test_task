@@ -27,6 +27,9 @@ dev = [
 target-version = "py313"
 line-length = 88
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.taskipy.tasks]
 integration = "python -m pytest tests/integration -v"
 integration-payment = "python -m pytest tests/integration/test_payment.py -v"
