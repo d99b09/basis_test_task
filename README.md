@@ -86,20 +86,19 @@ Webhook может доставляться повторно, поэтому п�
 ```bash
 uv sync --dev # зависимости
 docker compose up -d --build --wait # сервисы и инфраструктура
-set -a; source .env.test; set +a # переменные тестового окружения
 ```
 
 ```bash
-uv run task integration # все обычные интеграционные тесты
-uv run task integration-payment # платежи, webhook и лимит параллельной обработки
-uv run task integration-payment-low-success # 10% успеха, повторы и DLQ
-uv run task integration-webhook-unavailable # недоступный webhook и DLQ
+uv run --env-file .env.test task integration-payment # платежи, webhook и лимит параллельной обработки
+uv run --env-file .env.test task integration-payment-low-success # 10% успеха, повторы и DLQ
+uv run --env-file .env.test task integration-webhook-unavailable # недоступный webhook и DLQ
 docker compose stop consumer # подготовка сценария без consumer
-uv run task integration-consumer-unavailable # платежи остаются pending
+uv run --env-file .env.test task integration-consumer-unavailable # платежи остаются pending
 docker compose start consumer # восстановление consumer
-uv run task integration-consumer-recovery # восстановление consumer вручную по подсказке
-uv run task integration-rabbitmq-unavailable # платежи сохраняются при отказе RabbitMQ
-uv run task integration-rabbitmq-recovery # восстановление RabbitMQ вручную по подсказке
-uv run task integration-load # нагрузка: 10 000 платежей
-uv run task integration-payment-pause # пауза перед очисткой; продолжить — Enter
+uv run --env-file .env.test task integration-consumer-recovery # восстановление consumer вручную по подсказке
+uv run --env-file .env.test task integration-rabbitmq-unavailable # платежи сохраняются при отказе RabbitMQ
+uv run --env-file .env.test task integration-rabbitmq-recovery # восстановление RabbitMQ вручную по подсказке
+uv run --env-file .env.test task integration-load # нагрузка: 10 000 платежей
+uv run --env-file .env.test task integration-payment-pause # пауза перед очисткой; продолжить — Enter
+uv run --env-file .env.test task integration # все обычные интеграционные тесты
 ```
