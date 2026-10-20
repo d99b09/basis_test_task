@@ -8,3 +8,7 @@ class IdempotencyConflictError(Exception):
 
 class PaymentStorageError(Exception):
     pass
+
+
+class PaymentProcessingError(Exception):
+    pass
