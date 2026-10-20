@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .coverage
+test-results/
 
 volumes/*
 !volumes/.gitkeep
