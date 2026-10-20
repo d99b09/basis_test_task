@@ -7,13 +7,18 @@ from typing import Annotated
 from uuid import UUID
 
 from faststream import AckPolicy, Context, FastStream
-from faststream.rabbit import Channel, RabbitMessage
+from faststream.rabbit import RabbitMessage
 from httpx import AsyncClient, HTTPError
 from pydantic import ValidationError
 
 from app.core.db_config import SessionFactory, engine
 from app.exceptions.payment import PaymentProcessingError
-from app.infrastructure.rabbitmq import broker, payments_queue, setup_rabbitmq
+from app.infrastructure.rabbitmq import (
+    broker,
+    payments_channel,
+    payments_queue,
+    setup_rabbitmq,
+)
 from app.models.enums import PaymentStatus
 from app.models.payment import Payment
 from app.repos.payment import PaymentRepository
@@ -143,7 +148,7 @@ async def republish_retry(data: bytes, message: RabbitMessage, failures: int) ->
 
 @broker.subscriber(
     payments_queue,
-    channel=Channel(prefetch_count=1),
+    channel=payments_channel,
     ack_policy=AckPolicy.MANUAL,
     decoder=lambda message: message.body,
 )

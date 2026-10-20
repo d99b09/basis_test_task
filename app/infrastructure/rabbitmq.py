@@ -4,10 +4,11 @@ from faststream.rabbit import Channel, RabbitBroker, RabbitExchange, RabbitQueue
 
 from app.core.config import CONFIG
 
+payments_channel = Channel(prefetch_count=10, on_return_raises=True)
 broker = RabbitBroker(
     CONFIG.RABBITMQ_URL,
     timeout=10,
-    default_channel=Channel(on_return_raises=True),
+    default_channel=payments_channel,
 )
 dead_letter_exchange = RabbitExchange("payments.dlx")
 dead_letter_queue = RabbitQueue("payments.dlq", durable=True)
