@@ -31,7 +31,7 @@ API -> PostgreSQL (Payment + Outbox) -> Publisher -> RabbitMQ -> Consumer -> Web
 
 Payment и Outbox сохраняются в одной транзакции.
 Publisher обеспечивает доставку событий в RabbitMQ с гарантией at-least-once.
-Consumer обрабатывает платёж и отправляет webhook.
+Consumer обрабатывает до 10 платежей одновременно и отправляет webhook; остальные сообщения ждут в RabbitMQ.
 Retry и DLQ используются при технических ошибках, неуспешном результате обработки или ошибках доставки webhook. Повторная доставка webhook сохраняет итоговый статус платежа.
 
 ### API — примеры использования
@@ -78,3 +78,28 @@ curl 'http://localhost:8000/api/v1/payments/<PAYMENT_ID>' \
 Обработка платежей имитируется случайной задержкой и выбором результата, без интеграции с платёжным провайдером.
 Webhook может доставляться повторно, поэтому получатель должен учитывать дубликаты по `payment_id`.
 Автоматический возврат сообщений из DLQ не реализован: после устранения причины ошибки их нужно отправить на повторную обработку вручную.
+
+### Запуск интеграционных тестов через uv
+
+Подготовка: Python 3.13+, uv, Docker Compose. В `.env.test` укажите `DATABASE_URL` и `RABBITMQ_URL` с хостом `localhost`, `API_KEY` — из `.env`. Команды выполняются на Docker-хосте, из корня проекта.
+
+```bash
+uv sync --dev # зависимости
+docker compose up -d --build --wait # сервисы и инфраструктура
+set -a; source .env.test; set +a # переменные тестового окружения
+```
+
+```bash
+uv run task integration # все обычные интеграционные тесты
+uv run task integration-payment # платежи, webhook и лимит параллельной обработки
+uv run task integration-payment-low-success # 10% успеха, повторы и DLQ
+uv run task integration-webhook-unavailable # недоступный webhook и DLQ
+docker compose stop consumer # подготовка сценария без consumer
+uv run task integration-consumer-unavailable # платежи остаются pending
+docker compose start consumer # восстановление consumer
+uv run task integration-consumer-recovery # восстановление consumer вручную по подсказке
+uv run task integration-rabbitmq-unavailable # платежи сохраняются при отказе RabbitMQ
+uv run task integration-rabbitmq-recovery # восстановление RabbitMQ вручную по подсказке
+uv run task integration-load # нагрузка: 10 000 платежей
+uv run task integration-payment-pause # пауза перед очисткой; продолжить — Enter
+```

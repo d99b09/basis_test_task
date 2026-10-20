@@ -17,9 +17,32 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
     "ruff>=0.17.1",
+    "taskipy>=1.14.1",
 ]
 
 [tool.ruff]
 target-version = "py313"
 line-length = 88
+
+[tool.taskipy.tasks]
+integration = "python -m pytest tests/integration -v"
+integration-payment = "python -m pytest tests/integration/test_payment.py -v"
+integration-payment-low-success = "python -m pytest tests/integration/test_payment_low_success.py -v"
+integration-webhook-unavailable = "python -m pytest tests/integration/test_webhook_unavailable.py -v"
+integration-consumer-unavailable = "python -m pytest tests/integration/test_consumer_unavailable.py -v --consumer-unavailable"
+integration-consumer-recovery = "python -m pytest tests/integration/test_consumer_recovery.py -v --consumer-recovery"
+integration-rabbitmq-unavailable = "python -m pytest tests/integration/test_rabbitmq_unavailable.py -v --rabbitmq-unavailable"
+integration-rabbitmq-recovery = "python -m pytest tests/integration/test_rabbitmq_recovery.py -v --rabbitmq-recovery"
+integration-load = "python -m pytest tests/integration/test_payment_load.py -v -s --payment-load"
+integration-load-pause = "task integration-load --pause-before-cleanup"
+integration-pause = "task integration --pause-before-cleanup -s"
+integration-payment-pause = "task integration-payment --pause-before-cleanup -s"
+integration-payment-low-success-pause = "task integration-payment-low-success --pause-before-cleanup -s"
+integration-webhook-unavailable-pause = "task integration-webhook-unavailable --pause-before-cleanup -s"
+integration-consumer-unavailable-pause = "task integration-consumer-unavailable --pause-before-cleanup -s"
+integration-consumer-recovery-pause = "task integration-consumer-recovery --pause-before-cleanup -s"
+integration-rabbitmq-unavailable-pause = "task integration-rabbitmq-unavailable --pause-before-cleanup -s"
+integration-rabbitmq-recovery-pause = "task integration-rabbitmq-recovery --pause-before-cleanup -s"
