@@ -239,25 +239,92 @@ async def test_terminal_payment_is_not_processed_again(pipeline, status):
 
 
 @pytest.mark.asyncio
-async def test_webhook_errors_do_not_repeat_or_fail_successful_payment(pipeline):
+@pytest.mark.parametrize(
+    "outcomes",
+    [
+        ["succeeded"],
+        ["failed", "succeeded"],
+        ["failed", "failed", "succeeded"],
+        ["failed", "failed", "failed"],
+    ],
+)
+@pytest.mark.parametrize("success_attempt", [1, 2, 3, None])
+async def test_webhook_retries_inside_consumer_without_republishing(
+    pipeline, outcomes, success_attempt
+):
     from httpx import ConnectError
 
     from app.models.enums import PaymentStatus
 
-    pipeline.client.post.side_effect = ConnectError("webhook unavailable")
-    headers = {}
-    timestamps = []
-    for _ in range(3):
+    pipeline.processor.side_effect = [PaymentStatus(outcome) for outcome in outcomes]
+    headers = {"custom-header": "preserved"}
+    for _ in outcomes[:-1]:
         message = await deliver(pipeline, headers)
-        timestamps.append(pipeline.payment.processed_at)
-        if pipeline.publish.await_args is not None:
-            headers = pipeline.publish.await_args.kwargs["headers"]
-    pipeline.processor.assert_awaited_once()
+        message.ack.assert_awaited_once()
+        pipeline.client.post.assert_not_awaited()
+        headers = pipeline.publish.await_args.kwargs["headers"]
+
+    attempts = success_attempt or pipeline.consumer.WEBHOOK_ATTEMPTS
+    http_results = [ConnectError("webhook unavailable") for _ in range(attempts)]
+    if success_attempt is not None:
+        http_results[-1] = Response(
+            200, request=Request("POST", pipeline.payment.webhook_url)
+        )
+    pipeline.client.post.side_effect = http_results
+    pipeline.publish.reset_mock()
+    pipeline.sleep.reset_mock()
+    message = make_message(pipeline, headers)
+
+    async def wait_for_retry(delay):
+        # The original message stays unacknowledged throughout HTTP retries.
+        message.ack.assert_not_awaited()
+        message.reject.assert_not_awaited()
+        message.nack.assert_not_awaited()
+        pipeline.publish.assert_not_awaited()
+
+    pipeline.sleep.side_effect = wait_for_retry
+    await pipeline.consumer.consume(pipeline.data, message, pipeline.client)
+
+    assert pipeline.processor.await_count == len(outcomes)
     pipeline.repository.update_status.assert_awaited_once()
-    assert pipeline.payment.status == PaymentStatus.SUCCEEDED
-    assert timestamps == [timestamps[0]] * 3
-    assert pipeline.client.post.await_count == 3
-    message.reject.assert_awaited_once_with(requeue=False)
+    assert pipeline.payment.status == PaymentStatus(outcomes[-1])
+    assert pipeline.payment.processed_at is not None
+    expected_webhook = call(
+        pipeline.payment.webhook_url,
+        json={
+            "payment_id": str(pipeline.payment.id),
+            "status": pipeline.payment.status.value,
+            "processed_at": pipeline.payment.processed_at.isoformat(),
+        },
+    )
+    assert pipeline.client.post.await_args_list == [expected_webhook] * attempts
+    assert pipeline.sleep.await_args_list == [call(2**i) for i in range(attempts - 1)]
+    pipeline.publish.assert_not_awaited()
+    message.nack.assert_not_awaited()
+    if success_attempt is not None and outcomes[-1] == "succeeded":
+        message.ack.assert_awaited_once()
+        message.reject.assert_not_awaited()
+    else:
+        message.ack.assert_not_awaited()
+        message.reject.assert_awaited_once_with(requeue=False)
+
+
+@pytest.mark.asyncio
+async def test_webhook_retry_cancellation_leaves_message_unacknowledged(pipeline):
+    import asyncio
+
+    from httpx import ConnectError
+
+    pipeline.client.post.side_effect = ConnectError("webhook unavailable")
+    pipeline.sleep.side_effect = asyncio.CancelledError
+    message = make_message(pipeline)
+    with pytest.raises(asyncio.CancelledError):
+        await pipeline.consumer.consume(pipeline.data, message, pipeline.client)
+    pipeline.client.post.assert_awaited_once()
+    pipeline.publish.assert_not_awaited()
+    message.ack.assert_not_awaited()
+    message.reject.assert_not_awaited()
+    message.nack.assert_not_awaited()
 
 
 @pytest.mark.asyncio

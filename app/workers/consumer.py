@@ -28,6 +28,7 @@ from app.services.processor import PaymentProcessor
 logger = logging.getLogger(__name__)
 PROCESSING_ATTEMPTS = 3
 PROCESSING_FAILURES_HEADER = "x-processing-failures"
+WEBHOOK_ATTEMPTS = 3
 
 
 @asynccontextmanager
@@ -189,14 +190,30 @@ async def consume(
             await republish_retry(data, message, PROCESSING_ATTEMPTS)
             return
 
-    delivered = payment is not None and await send_webhook(payment, http_client)
-    if delivered:
-        if payment.status == PaymentStatus.FAILED:
-            await message.reject(requeue=False)
-        else:
-            await message.ack()
+    if payment is None:
+        await retry_or_reject(data, message, failures)
         return
-    await retry_or_reject(data, message, failures)
+
+    webhook_failures = 0
+    while webhook_failures < WEBHOOK_ATTEMPTS:
+        if await send_webhook(payment, http_client):
+            if payment.status == PaymentStatus.FAILED:
+                await message.reject(requeue=False)
+            else:
+                await message.ack()
+            return
+
+        webhook_failures += 1
+        logger.warning(
+            "Неудачная отправка webhook для платежа %s, попытка %s из %s",
+            payment.id,
+            webhook_failures,
+            WEBHOOK_ATTEMPTS,
+        )
+        if webhook_failures < WEBHOOK_ATTEMPTS:
+            await asyncio.sleep(2 ** (webhook_failures - 1))
+
+    await message.reject(requeue=False)
 
 
 if __name__ == "__main__":

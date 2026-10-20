@@ -30,7 +30,7 @@ async def test_ten_payments_with_unavailable_webhook_go_to_dlq(
         AsyncMock(return_value=PaymentStatus.SUCCEEDED),
     )
     payment_count = 10
-    attempts_per_payment = consumer.PROCESSING_ATTEMPTS
+    attempts_per_payment = consumer.WEBHOOK_ATTEMPTS
     sessions = payment_pipeline.sessions
     broker = payment_pipeline.broker
     channel = payment_pipeline.channel
@@ -69,12 +69,10 @@ async def test_ten_payments_with_unavailable_webhook_go_to_dlq(
             failures = message.headers.get(consumer.PROCESSING_FAILURES_HEADER, 0)
             deliveries[payment_id].append(failures)
             assert message.raw_message.processed
-            if failures == attempts_per_payment - 1:
-                assert message.committed == AckStatus.REJECTED
-                assert payment_id not in rejected_ids
-                rejected_ids.add(payment_id)
-            else:
-                assert message.committed == AckStatus.ACKED
+            assert failures == 0
+            assert message.committed == AckStatus.REJECTED
+            assert payment_id not in rejected_ids
+            rejected_ids.add(payment_id)
         except Exception as exc:
             if not completed.done():
                 completed.set_exception(exc)
@@ -137,7 +135,7 @@ async def test_ten_payments_with_unavailable_webhook_go_to_dlq(
         assert webhook_results.keys() == payment_ids
         assert deliveries.keys() == payment_ids
         for payment_id in payment_ids:
-            assert deliveries[payment_id] == list(range(attempts_per_payment))
+            assert deliveries[payment_id] == [0]
             assert len(webhook_results[payment_id]) == attempts_per_payment
             assert all(not result[0] for result in webhook_results[payment_id])
 
@@ -211,7 +209,7 @@ async def test_ten_payments_with_unavailable_webhook_go_to_dlq(
                 assert payment_id in payment_ids
                 assert payment_id not in dlq_payment_ids
                 assert message.message_id == str(payment_id)
-                assert message.headers[consumer.PROCESSING_FAILURES_HEADER] == 2
+                assert message.headers.get(consumer.PROCESSING_FAILURES_HEADER, 0) == 0
                 assert any(
                     death["reason"] == "rejected"
                     and death["queue"] == queue.name
