@@ -1,7 +1,6 @@
 from secrets import compare_digest
-from typing import Annotated
 
-from fastapi import HTTPException, Request, Security, status
+from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -16,9 +15,7 @@ api_key_header = APIKeyHeader(
 )
 
 
-async def verify_api_key(
-    api_key: Annotated[str | None, Security(api_key_header)],
-) -> None:
+async def verify_api_key(api_key: str | None) -> None:
     if api_key is None or not compare_digest(
         api_key.encode("utf-8"), CONFIG.API_KEY.encode("utf-8")
     ):

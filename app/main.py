@@ -1,13 +1,13 @@
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI, Security
 
 from app.api.payments import router as payments_router
 from app.core.lifespan import lifespan
-from app.core.security import APIKeyMiddleware, verify_api_key
+from app.core.security import APIKeyMiddleware, api_key_header
 
 app = FastAPI(
     title="Тестовое задание «ООО МКК Базис»",
     lifespan=lifespan,
-    dependencies=[Depends(verify_api_key)],
+    dependencies=[Security(api_key_header)],
     responses={401: {"description": "API-ключ отсутствует или неверен."}},
 )
 
