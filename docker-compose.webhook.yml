@@ -1,6 +1,5 @@
 services:
   webhook-receiver:
-    container_name: basis-test-task-webhook-receiver
     restart: unless-stopped
     build:
       context: ./tools/webhook_receiver

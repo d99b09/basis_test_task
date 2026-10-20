@@ -1,6 +1,5 @@
 services:
   postgres:
-    container_name: basis-test-task-postgres
     image: dockerhub.timeweb.cloud/library/postgres:18-alpine
     restart: unless-stopped
     env_file:
@@ -16,7 +15,6 @@ services:
       retries: 10
 
   rabbitmq:
-    container_name: basis-test-task-rabbitmq
     image: dockerhub.timeweb.cloud/library/rabbitmq:4.2-management-alpine
     restart: unless-stopped
     hostname: rabbitmq
@@ -47,7 +45,6 @@ services:
         condition: service_healthy
 
   api:
-    container_name: basis-test-task-api
     restart: unless-stopped
     build:
       context: .
@@ -62,7 +59,6 @@ services:
         condition: service_completed_successfully
 
   outbox_publisher:
-    container_name: basis-test-task-outbox-publisher
     build:
       context: .
     command: ["python", "-m", "app.workers.outbox_publisher"]
@@ -78,7 +74,6 @@ services:
         condition: service_healthy
 
   consumer:
-    container_name: basis-test-task-consumer
     build:
       context: .
     command: ["python", "-m", "app.workers.consumer"]
